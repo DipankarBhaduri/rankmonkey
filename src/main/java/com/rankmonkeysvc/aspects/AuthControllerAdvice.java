@@ -1,10 +1,7 @@
 package com.rankmonkeysvc.aspects;
 
 import com.rankmonkeysvc.constants.ErrorTitle;
-import com.rankmonkeysvc.exceptions.BaseException;
-import com.rankmonkeysvc.exceptions.DuplicateEmailException;
-import com.rankmonkeysvc.exceptions.IncorrectCredentialsException;
-import com.rankmonkeysvc.exceptions.UserNotFoundException;
+import com.rankmonkeysvc.exceptions.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -52,5 +49,42 @@ public class AuthControllerAdvice {
 		return new Problem()
 					   .setTitle(ErrorTitle.BAD_CREDENTIALS.toString())
 					   .setMessage(e.getLocalizedMessage());
+	}
+
+	@ExceptionHandler(
+			{
+					InvalidEmailException.class
+			}
+	)
+	@ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+	public Problem onInvalidEmailException (BaseException e) {
+		return new Problem()
+				.setTitle(ErrorTitle.EMPTY_EMAIL.toString())
+				.setMessage(e.getLocalizedMessage());
+	}
+
+	@ExceptionHandler(
+			{
+					InvalidEmailFormatException.class
+			}
+	)
+	@ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+	public Problem onInvalidEmailFormatException (BaseException e) {
+		return new Problem()
+				.setTitle(ErrorTitle.INVALID_EMAIL_FORMAT.toString())
+				.setMessage(e.getLocalizedMessage());
+	}
+
+	@ExceptionHandler(
+			{
+					DatabaseOperationException.class,
+					IncorrectResultSizeException.class
+			}
+	)
+	@ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+	public Problem onDatabaseOperationException (BaseException e) {
+		return new Problem()
+				.setTitle(ErrorTitle.DATABASE_OPERATION_FAILED.toString())
+				.setMessage(e.getLocalizedMessage());
 	}
 }

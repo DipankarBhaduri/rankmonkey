@@ -9,15 +9,15 @@ import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public enum Role {
-    ADMIN("ADMIN"),
     SUPER_ADMIN("SUPER_ADMIN"),
-    USER("USER");
+    ADMIN("ADMIN"),
+    GUEST("GUEST");
 
     @Getter
     private final String roleName;
 
     public List<SimpleGrantedAuthority> getAuthorities() {
-        return Set.of("ROLE_" + this.roleName)
+        return Set.of(this.roleName)
                 .stream()
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());

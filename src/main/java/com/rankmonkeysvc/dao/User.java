@@ -28,6 +28,18 @@ public class User implements UserDetails {
     @Column(name = "last_name")
     private String lastName;
 
+    @Column(name = "company_name")
+    private String companyName;
+
+    @Column(name = "company_address")
+    private String companyAddress;
+
+    @Column(name = "password_reset_link_generated_at")
+    private LocalDateTime passwordResetLinkGeneratedAt;
+
+    @Column(name = "retry_count")
+    private int retryCount;
+
     @Column(name = "password")
     private String password;
 

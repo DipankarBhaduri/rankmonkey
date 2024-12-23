@@ -2,17 +2,14 @@ package com.rankmonkeysvc.controllers;
 
 import com.rankmonkeysvc.dto.auth.AuthenticationRequest;
 import com.rankmonkeysvc.dto.auth.AuthenticationResponse;
+import com.rankmonkeysvc.dto.auth.EmailExistsResponse;
 import com.rankmonkeysvc.dto.onboarding.RegisterRequest;
 import com.rankmonkeysvc.services.AuthSvc;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import static com.rankmonkeysvc.messages.InfoLogs.AUTHENTICATE_FOR_USER;
-import static com.rankmonkeysvc.messages.InfoLogs.REGISTER_FOR_USER;
+import org.springframework.web.bind.annotation.*;
+import static com.rankmonkeysvc.messages.InfoLogs.*;
 
 @Slf4j
 @RestController
@@ -26,6 +23,23 @@ public class AuthController {
             AuthSvc authSvc
     ) {
         this.authSvc = authSvc;
+    }
+
+    @PostMapping("/check-email")
+    public EmailExistsResponse checkEmail(
+            @RequestParam String email
+    ) {
+        log.info(CHECK_EMAIL, email);
+        return authSvc.checkEmail(email);
+    }
+
+    @PostMapping("/set-password")
+    public AuthenticationResponse setPassword(
+            @RequestParam(required = true) String password,
+            @RequestParam(required = true) String authToken
+    ) {
+        log.info(SET_PASSWORD, authToken);
+        return authSvc.setPassword(password, authToken);
     }
 
     @PostMapping("/register")

@@ -18,7 +18,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
-
 import static com.rankmonkeysvc.messages.StaticMessages.*;
 
 @Service
@@ -33,12 +32,12 @@ public class JwtSvcImpl implements JwtSvc {
 	}
 
     @Override
-    public String generateToken(UserDetails user) {
+    public String generateToken(UserDetails user, Long tokenExpiration) {
         return Jwts.builder()
-                .setSubject(user.getUsername())
-                .claim(AUTHORITIES, populateAuthorities(user.getAuthorities()))
+                .claim(EMAIL, user.getUsername())
+                .claim(ROLE, populateAuthorities(user.getAuthorities()))
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + TOKEN_EXPIRY))
+                .setExpiration(new Date(System.currentTimeMillis() + tokenExpiration))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
