@@ -3,9 +3,8 @@ package com.rankmonkeysvc.controllers;
 import com.rankmonkeysvc.dto.auth.AuthenticationRequest;
 import com.rankmonkeysvc.dto.auth.AuthenticationResponse;
 import com.rankmonkeysvc.dto.auth.EmailExistsResponse;
-import com.rankmonkeysvc.dto.onboarding.RegisterRequest;
+import com.rankmonkeysvc.dto.common.MessageResponse;
 import com.rankmonkeysvc.services.AuthSvc;
-import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -42,12 +41,12 @@ public class AuthController {
         return authSvc.setPassword(password, authToken);
     }
 
-    @PostMapping("/register")
-    public AuthenticationResponse register(
-            @RequestBody @Valid RegisterRequest registerRequest
+    @PostMapping("/forget-password")
+    public MessageResponse forgetPassword(
+            @RequestParam String email
     ) {
-        log.info(REGISTER_FOR_USER, registerRequest.getEmail());
-        return authSvc.register(registerRequest);
+        log.info(REGISTER_FOR_USER, email);
+        return authSvc.forgetPassword(email);
     }
 
     @PostMapping("/authenticate")

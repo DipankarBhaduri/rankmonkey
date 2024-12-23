@@ -87,4 +87,40 @@ public class AuthControllerAdvice {
 				.setTitle(ErrorTitle.DATABASE_OPERATION_FAILED.toString())
 				.setMessage(e.getLocalizedMessage());
 	}
+
+	@ExceptionHandler(
+			{
+					MaximumRetryCountExceededException.class
+			}
+	)
+	@ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
+	public Problem onMaximumRetryCountExceededException (BaseException e) {
+		return new Problem()
+				.setTitle(ErrorTitle.MAXIMUM_RETRY_COUNT_EXCEEDED.toString())
+				.setMessage(e.getLocalizedMessage());
+	}
+
+	@ExceptionHandler(
+			{
+					LinkExpiredException.class
+			}
+	)
+	@ResponseStatus(HttpStatus.REQUEST_TIMEOUT)
+	public Problem onLinkExpiredException (BaseException e) {
+		return new Problem()
+				.setTitle(ErrorTitle.LINK_HAS_EXPIRED.toString())
+				.setMessage(e.getLocalizedMessage());
+	}
+
+	@ExceptionHandler(
+			{
+					InvalidAuthTokenException.class
+			}
+	)
+	@ResponseStatus(HttpStatus.NOT_FOUND)
+	public Problem onInvalidAuthTokenException (BaseException e) {
+		return new Problem()
+				.setTitle(ErrorTitle.INVALID_AUTH_TOKEN.toString())
+				.setMessage(e.getLocalizedMessage());
+	}
 }

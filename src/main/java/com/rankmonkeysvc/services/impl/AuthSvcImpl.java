@@ -8,7 +8,7 @@ import com.rankmonkeysvc.dao.User;
 import com.rankmonkeysvc.dto.auth.AuthenticationRequest;
 import com.rankmonkeysvc.dto.auth.AuthenticationResponse;
 import com.rankmonkeysvc.dto.auth.EmailExistsResponse;
-import com.rankmonkeysvc.dto.onboarding.RegisterRequest;
+import com.rankmonkeysvc.dto.common.MessageResponse;
 import com.rankmonkeysvc.exceptions.*;
 import com.rankmonkeysvc.repositories.UserInfoRepository;
 import com.rankmonkeysvc.services.AuthSvc;
@@ -23,17 +23,16 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-
 import static com.rankmonkeysvc.messages.ErrorLogs.*;
 import static com.rankmonkeysvc.messages.ErrorLogs.DATABASE_OPERATION_FAILED;
 import static com.rankmonkeysvc.messages.ErrorMessages.*;
-import static com.rankmonkeysvc.messages.StaticMessages.EMAIL_REGEX;
+import static com.rankmonkeysvc.messages.StaticMessages.*;
+import static com.rankmonkeysvc.messages.SuccessMessages.PASSWORD_RESET_LINK_SENT;
 
 @Service
 @Slf4j
@@ -63,28 +62,6 @@ public class AuthSvcImpl implements AuthSvc {
     }
 
     @Override
-    public AuthenticationResponse register(RegisterRequest registerRequest){
-		userInfoRepository.findByEmail(registerRequest.getEmail())
-				.ifPresent(user -> {
-					log.error(EMAIL_SYNCED_WITH_ANOTHER_ACCOUNT, registerRequest.getEmail());
-                    throw new DuplicateEmailException(DUPLICATE_EMAIL);
-				});
-		
-		User userObject = new User().setId(UUID.randomUUID())
-                .setEmail(registerRequest.getEmail())
-                .setPassword(passwordEncoder.encode(registerRequest.getPassword()))
-                .setRole(Role.ADMIN)
-                .setStatus(UserStatus.NEW);
-
-        eventLogHelper.createEventLog(
-                EventType.USER_CREATION, userObject.getId().toString(), new HashMap<>(), null);
-
-        userInfoRepository.save(userObject);
-        String jwtToken = jwtSvc.generateToken(userObject, 123L);
-        return new AuthenticationResponse().setAccessToken(jwtToken);
-    }
-
-    @Override
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
 		try {
 			authenticationManager.authenticate(
@@ -106,11 +83,12 @@ public class AuthSvcImpl implements AuthSvc {
                                return new UserNotFoundException(USER_NOT_FOUND);
                            });
 
-        String jwtToken = jwtSvc.generateToken(user, 123L);
-        eventLogHelper.createEventLog(
-                EventType.USER_LOGIN, user.getId().toString(), new HashMap<>(), null);
+        String jwtAccessToken = jwtSvc.generateToken(user, ACCESS_TOKEN_EXPIRY);
+        String jwtRequestToken = jwtSvc.generateToken(user, REFRESH_TOKEN_EXPIRY);
 
-        return new AuthenticationResponse().setAccessToken(jwtToken);
+        return new AuthenticationResponse()
+                .setAccessToken(jwtAccessToken)
+                .setRequestToken(jwtRequestToken);
     }
 
     @Override
@@ -128,25 +106,27 @@ public class AuthSvcImpl implements AuthSvc {
                     () -> {
                         userInfoRepository.findByEmailAndPasswordIsNull(email).ifPresentOrElse(
                                 user -> {
-                                    response.setEmailExists(false);
-                                    userInfoRepository.save(user.setUpdatedAt(LocalDateTime.now()));
-                                    CompletableFuture.runAsync(() -> {
-                                        emailSvc.sendEmail(email, user.getId().toString());
-                                    });
+                                    validateRetryCountAndUpdate(user, response);
+                                    sendEmailAsync(email, user);
                                 },
                                 () -> {
                                     response.setEmailExists(false);
                                     User userObject = new User()
-                                            .setId(UUID.randomUUID()).setEmail(email).setStatus(UserStatus.NEW);
+                                            .setId(UUID.randomUUID())
+                                            .setEmail(email)
+                                            .setRetryCount(1)
+                                            .setPasswordResetLinkGeneratedAt(LocalDateTime.now())
+                                            .setStatus(UserStatus.NEW);
 
                                     User user = userInfoRepository.save(userObject);
-                                    CompletableFuture.runAsync(() -> {
-                                        emailSvc.sendEmail(email, user.getId().toString());
-                                    });
+                                    sendEmailAsync(email, user);
                                 }
                         );
                     }
             );
+        } catch (MaximumRetryCountExceededException e) {
+            throw new MaximumRetryCountExceededException(e.getMessage());
+
         } catch (IncorrectResultSizeDataAccessException e) {
             log.error(
                     String.format(INCORRECT_RESULT_SIZE_DATA_ACCESS_EXCEPTION, e.getMessage())
@@ -161,20 +141,138 @@ public class AuthSvcImpl implements AuthSvc {
         return response;
     }
 
+    private void validateRetryCountAndUpdate(
+            User user, EmailExistsResponse response
+    ) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime resetLinkTimeLimit = now.minusDays(1);
+
+        if (user.getRetryCount() >= 3 &&
+                user.getPasswordResetLinkGeneratedAt().isAfter(resetLinkTimeLimit)) {
+            log.error(
+                    String.format(MAXIMUM_RETRY_COUNT_EXCEEDED, user.getEmail())
+            );
+            throw new MaximumRetryCountExceededException(MAXIMUM_RETRY_COUNT_EXCEEDED_MESSAGE);
+        }
+
+        user.setRetryCount(user.getRetryCount() == 3 ? 1 : user.getRetryCount() + 1)
+                .setPasswordResetLinkGeneratedAt(now);
+
+        response.setEmailExists(false);
+        userInfoRepository.save(user);
+    }
+
+    private void sendEmailAsync(String email, User user) {
+        if (email.length() > 0) {
+            return;
+        }
+        eventLogHelper.createEventLog(
+                EventType.SET_PASSWORD_REQUEST_VIA_EMAIL,
+                user.getId().toString(), new HashMap<>(), null);
+
+        CompletableFuture.runAsync(
+                () -> {
+                    emailSvc.sendEmail(email, user.getId().toString());
+        });
+    }
+
     private static void validateEmail(String email) {
         if (StringUtils.isEmpty(email)) {
-            log.error(EMAIL_CANNOT_BE_EMPTY);
+            log.error(
+                    EMAIL_CANNOT_BE_EMPTY
+            );
             throw new InvalidEmailException(EMPTY_EMAIL);
         }
 
         if (!email.matches(EMAIL_REGEX)) {
-            log.error(String.format(INVALID_EMAIL_FORMAT, email));
+            log.error(
+                    String.format(INVALID_EMAIL_FORMAT, email)
+            );
             throw new InvalidEmailFormatException(WRONG_EMAIL_FORMAT);
         }
     }
 
     @Override
     public AuthenticationResponse setPassword(String password, String authToken) {
-        return null;
+        try {
+            Optional<User> userOptional = userInfoRepository.findById(UUID.fromString(authToken));
+            if (userOptional.isPresent()) {
+                return setPassword(password, userOptional.get());
+
+            } else {
+                log.error(AUTH_TOKEN_IS_INVALID, authToken);
+                throw new InvalidAuthTokenException(AUTH_TOKEN_IS_INVALID_MESSAGE);
+
+            }
+        } catch (LinkExpiredException e) {
+            throw new LinkExpiredException(e.getMessage());
+
+        } catch (Exception e) {
+            if (e instanceof IllegalArgumentException || e instanceof InvalidAuthTokenException) {
+                log.error(
+                        AUTH_TOKEN_IS_INVALID, authToken
+                );
+                throw new InvalidAuthTokenException(AUTH_TOKEN_IS_INVALID_MESSAGE);
+            }
+            log.error(
+                    String.format(DATABASE_OPERATION_FAILED, e.getMessage())
+            );
+            throw new DatabaseOperationException(DATABASE_OPERATION_FAIL);
+        }
+    }
+
+    private AuthenticationResponse setPassword(String password, User user) {
+        LocalDateTime now = LocalDateTime.now();
+        if (user.getPasswordResetLinkGeneratedAt().isBefore(now.minusMinutes(5))) {
+            log.error(
+                    String.format(LINK_HAS_EXPIRED, user.getEmail())
+            );
+            throw new LinkExpiredException(LINK_HAS_EXPIRED_MESSAGE);
+        }
+
+        user.setPassword(passwordEncoder.encode(password))
+                .setEmailVerified(true)
+                .setRole(Role.ADMIN);
+
+        userInfoRepository.save(user);
+        eventLogHelper.createEventLog(
+                EventType.USER_LOGIN, user.getId().toString(), new HashMap<>(), null);
+
+        String jwtAccessToken = jwtSvc.generateToken(user, ACCESS_TOKEN_EXPIRY);
+        String jwtRequestToken = jwtSvc.generateToken(user, REFRESH_TOKEN_EXPIRY);
+
+        return new AuthenticationResponse()
+                .setAccessToken(jwtAccessToken)
+                .setRequestToken(jwtRequestToken);
+    }
+
+    @Override
+    public MessageResponse forgetPassword(String email) {
+        try {
+            userInfoRepository.findByEmailAndEmailVerifiedTrue(email).ifPresentOrElse(
+                    user -> {
+                        validateRetryCountAndUpdate(user, new EmailExistsResponse());
+                        sendEmailAsync(email, user);
+                    },
+                    () -> {
+                        log.error(
+                                String.format(USER_NOT_FOUND_WITH_EMAIL_ID, email)
+                        );
+                        throw new UserNotFoundException(USER_NOT_FOUND);
+                    }
+            );
+        } catch (MaximumRetryCountExceededException e) {
+                throw new MaximumRetryCountExceededException(e.getMessage());
+
+        } catch (UserNotFoundException e) {
+            throw new UserNotFoundException(e.getMessage());
+
+        } catch (Exception e) {
+            log.error(
+                    String.format(DATABASE_OPERATION_FAILED, e.getMessage())
+            );
+            throw new DatabaseOperationException(DATABASE_OPERATION_FAIL);
+        }
+        return new MessageResponse().setMessage(PASSWORD_RESET_LINK_SENT);
     }
 }

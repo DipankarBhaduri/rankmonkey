@@ -34,6 +34,7 @@ public class JwtSvcImpl implements JwtSvc {
     @Override
     public String generateToken(UserDetails user, Long tokenExpiration) {
         return Jwts.builder()
+                .setSubject(user.getUsername())
                 .claim(EMAIL, user.getUsername())
                 .claim(ROLE, populateAuthorities(user.getAuthorities()))
                 .setIssuedAt(new Date(System.currentTimeMillis()))

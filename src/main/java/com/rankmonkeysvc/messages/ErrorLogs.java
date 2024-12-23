@@ -6,9 +6,13 @@ public class ErrorLogs {
     public static final String LOG_WITH_PAYLOAD = "ERROR :: user :: {} :: record :: {}.";
     public static final String USER_NOT_FOUND_WITH_EMAIL_ID = "ERROR :: User not found with email: {}.";
     public static final String BAD_CREDENTIALS_ERROR_LOG = "ERROR :: either username :: %s or password %s is incorrect.";
+//    public static final String BAD_CREDENTIALS_ERROR_LOG = "ERROR :: either username :: %s or password %s is incorrect.";
     public static final String EMAIL_SYNCED_WITH_ANOTHER_ACCOUNT = "ERROR :: {} is already synced with another account.";
     public static final String EMAIL_CANNOT_BE_EMPTY = "ERROR :: email cannot be empty.";
     public static final String INVALID_EMAIL_FORMAT = "ERROR :: {} its a invalid email format.";
     public static final String DATABASE_OPERATION_FAILED = "ERROR :: {} - Database connection failed.";
     public static final String INCORRECT_RESULT_SIZE_DATA_ACCESS_EXCEPTION = "ERROR :: Expected single result but got multiple - {}";
+    public static final String MAXIMUM_RETRY_COUNT_EXCEEDED = "ERROR :: with in 24 hrs user trying to trying more then 3 times, user - {}";
+    public static final String AUTH_TOKEN_IS_INVALID = "ERROR :: auth-token is invalid for user - {}";
+    public static final String LINK_HAS_EXPIRED = "ERROR :: link has expired for user - {}";
 }
