@@ -83,6 +83,9 @@ public class AuthSvcImpl implements AuthSvc {
                                return new UserNotFoundException(USER_NOT_FOUND);
                            });
 
+        eventLogHelper.createEventLog(
+                EventType.USER_LOGIN, user.getId().toString(), new HashMap<>(), null);
+
         String jwtAccessToken = jwtSvc.generateToken(user, ACCESS_TOKEN_EXPIRY);
         String jwtRequestToken = jwtSvc.generateToken(user, REFRESH_TOKEN_EXPIRY);
 
@@ -117,6 +120,10 @@ public class AuthSvcImpl implements AuthSvc {
                                             .setRetryCount(1)
                                             .setPasswordResetLinkGeneratedAt(LocalDateTime.now())
                                             .setStatus(UserStatus.NEW);
+
+                                    eventLogHelper.createEventLog(
+                                            EventType.USER_CREATION,
+                                            userObject.getId().toString(), new HashMap<>(), null);
 
                                     User user = userInfoRepository.save(userObject);
                                     sendEmailAsync(email, user);

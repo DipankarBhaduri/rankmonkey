@@ -1,8 +1,8 @@
 package com.rankmonkeysvc.services;
 
-import com.rankmonkeysvc.dto.auth.AuthenticationResponse;
 import com.rankmonkeysvc.dto.auth.PasswordChangeRequest;
+import com.rankmonkeysvc.dto.common.MessageResponse;
 
 public interface ProfileSvc {
-    AuthenticationResponse changePassword(String userId, PasswordChangeRequest passwordChangeRequest);
+    MessageResponse changePassword(String userId, PasswordChangeRequest passwordChangeRequest);
 }

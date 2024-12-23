@@ -3,6 +3,7 @@ package com.rankmonkeysvc.controllers;
 import com.rankmonkeysvc.auth.JwtSvc;
 import com.rankmonkeysvc.dto.auth.AuthenticationResponse;
 import com.rankmonkeysvc.dto.auth.PasswordChangeRequest;
+import com.rankmonkeysvc.dto.common.MessageResponse;
 import com.rankmonkeysvc.services.ProfileSvc;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +29,7 @@ public class ProfileController {
     }
 
     @PostMapping("/change-password")
-    public AuthenticationResponse changePassword(
+    public MessageResponse changePassword(
             @RequestBody PasswordChangeRequest passwordChangeRequest,
             HttpServletRequest request
     ) {

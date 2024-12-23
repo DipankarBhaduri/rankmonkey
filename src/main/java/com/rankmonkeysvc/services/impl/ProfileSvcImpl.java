@@ -3,7 +3,10 @@ package com.rankmonkeysvc.services.impl;
 import com.rankmonkeysvc.dao.User;
 import com.rankmonkeysvc.dto.auth.AuthenticationResponse;
 import com.rankmonkeysvc.dto.auth.PasswordChangeRequest;
+import com.rankmonkeysvc.dto.common.MessageResponse;
 import com.rankmonkeysvc.exceptions.IncorrectCredentialsException;
+import com.rankmonkeysvc.exceptions.OldAndNewSamePasswordException;
+import com.rankmonkeysvc.exceptions.UserNotFoundException;
 import com.rankmonkeysvc.repositories.UserInfoRepository;
 import com.rankmonkeysvc.services.ProfileSvc;
 import lombok.extern.slf4j.Slf4j;
@@ -11,11 +14,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import java.util.UUID;
-import static com.rankmonkeysvc.messages.ErrorLogs.BAD_CREDENTIALS_ERROR_LOG;
-import static com.rankmonkeysvc.messages.ErrorMessages.INCORRECT_CREDENTIALS;
-import static com.rankmonkeysvc.messages.ErrorMessages.INCORRECT_OLD_PASSWORD;
+
+import static com.rankmonkeysvc.messages.ErrorLogs.*;
+import static com.rankmonkeysvc.messages.ErrorMessages.*;
 
 @Slf4j
 @Component
@@ -23,38 +27,44 @@ public class ProfileSvcImpl implements ProfileSvc {
 
     private final UserInfoRepository userInfoRepository;
     private final AuthenticationManager authenticationManager;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public ProfileSvcImpl (
-        UserInfoRepository userInfoRepository,
-        AuthenticationManager authenticationManager
+    public ProfileSvcImpl(
+            UserInfoRepository userInfoRepository,
+            AuthenticationManager authenticationManager,
+            PasswordEncoder passwordEncoder
     ) {
         this.userInfoRepository = userInfoRepository;
         this.authenticationManager = authenticationManager;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
-    public AuthenticationResponse changePassword(String userId, PasswordChangeRequest passwordChangeRequest) {
-        User user = userInfoRepository.findById(UUID.fromString(userId)).orElse(new User());
+    public MessageResponse changePassword(String userId, PasswordChangeRequest passwordChangeRequest) {
+        UUID uuid = UUID.fromString(userId);
+        User user = userInfoRepository.findById(uuid)
+                .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND));
+
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            user.getEmail(),
-                            passwordChangeRequest.getOldPassword()
+                            user.getEmail(), passwordChangeRequest.getOldPassword()
                     )
             );
-
-            if (passwordChangeRequest.getNewPassword().equals(passwordChangeRequest.getOldPassword())) {
-                log.error(INCORRECT_OLD_PASSWORD);
-                throw new IncorrectCredentialsException(INCORRECT_OLD_PASSWORD);
-            }
         } catch (BadCredentialsException e) {
-            log.error(String.format(
-                    BAD_CREDENTIALS_ERROR_LOG, user.getEmail(), passwordChangeRequest.getOldPassword())
-            );
+            log.error(String.format(INCORRECT_OLD_PASSWORD_LOG, user.getEmail()));
             throw new IncorrectCredentialsException(INCORRECT_OLD_PASSWORD);
         }
 
-        return null;
+        if (passwordChangeRequest.getNewPassword().equals(passwordChangeRequest.getOldPassword())) {
+            log.error(NEW_AND_OLD_PASSWORD_CANNOT_BE_SAME_LOG, user.getEmail());
+            throw new OldAndNewSamePasswordException(NEW_AND_OLD_PASSWORD_CANNOT_BE_SAME_MESSAGE);
+        }
+
+        user.setPassword(passwordEncoder.encode(passwordChangeRequest.getNewPassword()));
+        userInfoRepository.save(user);
+
+        return new MessageResponse().setMessage("Password changed successfully.");
     }
 }
