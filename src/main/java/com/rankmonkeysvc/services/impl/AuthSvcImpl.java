@@ -14,6 +14,8 @@ import com.rankmonkeysvc.repositories.UserInfoRepository;
 import com.rankmonkeysvc.services.AuthSvc;
 import com.rankmonkeysvc.services.EmailSvc;
 import com.rankmonkeysvc.utils.EventLogHelper;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.security.SignatureException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,8 @@ import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+
+import static com.rankmonkeysvc.constants.ErrorTitle.INVALID_AUTH_TOKEN;
 import static com.rankmonkeysvc.messages.ErrorLogs.*;
 import static com.rankmonkeysvc.messages.ErrorLogs.DATABASE_OPERATION_FAILED;
 import static com.rankmonkeysvc.messages.ErrorMessages.*;
@@ -285,13 +289,34 @@ public class AuthSvcImpl implements AuthSvc {
 
     @Override
     public AuthenticationResponse tokenExchange(String refreshToken) {
+        String email;
         try {
-            String userId = jwtSvc.extractUsername(refreshToken);
-        } catch (BadCredentialsException e) {
-            throw new IncorrectCredentialsException(INCORRECT_CREDENTIALS);
+            email = jwtSvc.extractUsername(refreshToken);
+
+        } catch (ExpiredJwtException e) {
+            throw new RefreshTokenExpired(REFRESH_TOKEN_EXPIRED);
+
+        } catch (SignatureException e) {
+            log.error(
+                    AUTH_TOKEN_IS_INVALID, refreshToken
+            );
+            throw new InvalidAuthTokenException(AUTH_TOKEN_IS_INVALID_MESSAGE);
         }
 
+        String finalEmail = email;
+        User user = userInfoRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    log.error(
+                            USER_NOT_FOUND_WITH_EMAIL_ID, finalEmail
+                    );
+                    return new UserNotFoundException(USER_NOT_FOUND);
+                });
 
-        return null;
+        String jwtAccessToken = jwtSvc.generateToken(user, ACCESS_TOKEN_EXPIRY);
+        String jwtRefreshToken = jwtSvc.generateToken(user, REFRESH_TOKEN_EXPIRY);
+
+        return new AuthenticationResponse()
+                .setAccessToken(jwtAccessToken)
+                .setRefreshToken(jwtRefreshToken);
     }
 }

@@ -57,9 +57,9 @@ public class AuthController {
         return authSvc.authenticate(request);
     }
 
-    @PostMapping("/token/exchange")
+    @PostMapping("/token-exchange")
     public AuthenticationResponse tokenExchange(
-            @RequestParam String refreshToken
+            @RequestParam (required = true) String refreshToken
     ) {
         log.info(REFRESH_TOKEN, refreshToken);
         return authSvc.tokenExchange(refreshToken);

@@ -12,4 +12,5 @@ public class ErrorMessages {
     public static final String AUTH_TOKEN_IS_INVALID_MESSAGE = "Auth-token is invalid.";
     public static final String LINK_HAS_EXPIRED_MESSAGE = "Link has expired.";
     public static final String NEW_AND_OLD_PASSWORD_CANNOT_BE_SAME_MESSAGE = "New password and old password cannot be same.";
+    public static final String REFRESH_TOKEN_EXPIRED = "Refresh token expired.";
 }

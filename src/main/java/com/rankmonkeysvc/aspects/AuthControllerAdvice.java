@@ -123,4 +123,16 @@ public class AuthControllerAdvice {
 				.setTitle(ErrorTitle.INVALID_AUTH_TOKEN.toString())
 				.setMessage(e.getLocalizedMessage());
 	}
+
+	@ExceptionHandler(
+			{
+					RefreshTokenExpired.class
+			}
+	)
+	@ResponseStatus(HttpStatus.UNAUTHORIZED)
+	public Problem onRefreshTokenExpired (BaseException e) {
+		return new Problem()
+				.setTitle(ErrorTitle.REFRESH_TOKEN_EXPIRED.toString())
+				.setMessage(e.getLocalizedMessage());
+	}
 }
