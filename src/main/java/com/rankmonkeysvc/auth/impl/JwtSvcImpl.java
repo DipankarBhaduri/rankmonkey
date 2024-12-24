@@ -65,6 +65,7 @@ public class JwtSvcImpl implements JwtSvc {
                 .getBody();
     }
 
+    @Override
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }

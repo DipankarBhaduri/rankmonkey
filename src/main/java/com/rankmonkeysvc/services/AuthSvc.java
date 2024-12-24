@@ -13,4 +13,6 @@ public interface AuthSvc {
     AuthenticationResponse setPassword(String password, String authToken);
 
     MessageResponse forgetPassword(String email);
+
+    AuthenticationResponse tokenExchange(String refreshToken);
 }

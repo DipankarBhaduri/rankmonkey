@@ -58,10 +58,10 @@ public class AuthController {
     }
 
     @PostMapping("/token/exchange")
-    public AuthenticationResponse getUpdatedToken(
-            @RequestBody AuthenticationRequest request
+    public AuthenticationResponse tokenExchange(
+            @RequestParam String refreshToken
     ) {
-        log.info(AUTHENTICATE_FOR_USER, request.getEmail());
-        return authSvc.authenticate(request);
+        log.info(REFRESH_TOKEN, refreshToken);
+        return authSvc.tokenExchange(refreshToken);
     }
 }

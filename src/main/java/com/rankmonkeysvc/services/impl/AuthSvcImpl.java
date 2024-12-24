@@ -282,4 +282,16 @@ public class AuthSvcImpl implements AuthSvc {
         }
         return new MessageResponse().setMessage(PASSWORD_RESET_LINK_SENT);
     }
+
+    @Override
+    public AuthenticationResponse tokenExchange(String refreshToken) {
+        try {
+            String userId = jwtSvc.extractUsername(refreshToken);
+        } catch (BadCredentialsException e) {
+            throw new IncorrectCredentialsException(INCORRECT_CREDENTIALS);
+        }
+
+
+        return null;
+    }
 }
