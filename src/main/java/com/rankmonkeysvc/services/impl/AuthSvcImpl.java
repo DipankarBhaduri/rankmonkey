@@ -91,7 +91,7 @@ public class AuthSvcImpl implements AuthSvc {
 
         return new AuthenticationResponse()
                 .setAccessToken(jwtAccessToken)
-                .setRequestToken(jwtRequestToken);
+                .setRefreshToken(jwtRequestToken);
     }
 
     @Override
@@ -250,7 +250,7 @@ public class AuthSvcImpl implements AuthSvc {
 
         return new AuthenticationResponse()
                 .setAccessToken(jwtAccessToken)
-                .setRequestToken(jwtRequestToken);
+                .setRefreshToken(jwtRequestToken);
     }
 
     @Override
