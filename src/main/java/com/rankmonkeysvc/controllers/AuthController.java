@@ -56,4 +56,12 @@ public class AuthController {
         log.info(AUTHENTICATE_FOR_USER, request.getEmail());
         return authSvc.authenticate(request);
     }
+
+    @PostMapping("/token/exchange")
+    public AuthenticationResponse getUpdatedToken(
+            @RequestBody AuthenticationRequest request
+    ) {
+        log.info(AUTHENTICATE_FOR_USER, request.getEmail());
+        return authSvc.authenticate(request);
+    }
 }

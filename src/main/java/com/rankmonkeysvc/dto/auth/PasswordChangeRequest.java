@@ -8,5 +8,4 @@ import lombok.experimental.Accessors;
 public class PasswordChangeRequest {
     private String oldPassword;
     private String newPassword;
-    private String confirmNewPassword;
 }

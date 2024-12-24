@@ -2,7 +2,6 @@ package com.rankmonkeysvc.aspects;
 
 import com.rankmonkeysvc.constants.ErrorTitle;
 import com.rankmonkeysvc.exceptions.BaseException;
-import com.rankmonkeysvc.exceptions.DuplicateEmailException;
 import com.rankmonkeysvc.exceptions.OldAndNewSamePasswordException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
