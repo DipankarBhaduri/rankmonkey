@@ -14,7 +14,7 @@
 # ENTRYPOINT ["java", "-jar", "app.jar"]
 
 FROM eclipse-temurin:21-jdk-alpine
-VOLUME /tmp
+#VOLUME /tmp
 EXPOSE 9999
 ARG JAR_FILE=target/rankmonkeysvc-0.0.1-SNAPSHOT.jar
 ADD ${JAR_FILE} app.jar
