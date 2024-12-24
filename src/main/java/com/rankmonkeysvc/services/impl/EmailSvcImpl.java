@@ -1,5 +1,6 @@
 package com.rankmonkeysvc.services.impl;
 
+import com.rankmonkeysvc.constants.EventType;
 import com.rankmonkeysvc.dto.common.MessageResponse;
 import com.rankmonkeysvc.services.EmailSvc;
 import javax.mail.*;
@@ -7,19 +8,26 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
+import java.util.HashMap;
 import java.util.Properties;
+import com.rankmonkeysvc.utils.EventLogHelper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import static com.rankmonkeysvc.messages.StaticMessages.*;
 
 @Component
 public class EmailSvcImpl implements EmailSvc {
+    private final EventLogHelper eventLogHelper;
+
+    @Autowired
+    public EmailSvcImpl(EventLogHelper eventLogHelper) {
+        this.eventLogHelper = eventLogHelper;
+    }
 
     @Override
     public MessageResponse sendEmail(String recipientEmail, String authToken) {
         String senderEmail = SENDER_EMAIL;
-        String appPassword = APP_PASSWORD;
         String emailContent = getEmailBody(authToken);
-
         Properties props = new Properties();
         props.put(MAIL_SMTP_AUTH, TRUE);
         props.put(MAIL_SMTP_STARTTLS_ENABLE, TRUE);
@@ -28,7 +36,7 @@ public class EmailSvcImpl implements EmailSvc {
 
         Session session = Session.getInstance(props, new Authenticator() {
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(senderEmail, appPassword);
+                return new PasswordAuthentication(senderEmail, APP_PASSWORD);
             }
         });
 
@@ -37,19 +45,18 @@ public class EmailSvcImpl implements EmailSvc {
             message.setFrom(new InternetAddress(senderEmail));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipientEmail));
             message.setSubject(VERIFY_EMAIL_USING_EMAIL);
-
             BodyPart messageBodyPart = new MimeBodyPart();
-
             messageBodyPart.setContent(emailContent, MAIL_CONTENT_TYPE);
-
             Multipart multipart = new MimeMultipart();
-
             multipart.addBodyPart(messageBodyPart);
-
             message.setContent(multipart);
-
             Transport.send(message);
-        } catch (MessagingException e) {
+
+        } catch (Exception e) {
+            eventLogHelper.createEventLog(EventType.SET_PASSWORD_EMAIL_SENT,
+                    authToken, new HashMap<String, String>() {{
+                        put("reason", e.getMessage());
+            }}, null);
             throw new RuntimeException(e);
         }
         return null;
@@ -76,15 +83,15 @@ public class EmailSvcImpl implements EmailSvc {
                 "                <p style=\"margin: 0 0 16px;\">Hi there,</p>\n" +
                 "                <p style=\"margin: 0 0 16px;\">Thank you for signing up to RankMonkey! We are excited to have you on board. To get started, please verify your email address by clicking the button below:</p>\n" +
                 "                <p style=\"text-align: center; margin: 24px 0;\">\n" +
-                "                    <a href=\"http://localhost:9999/v1/auth/set-password?authToken=" + authToken + "\"\n" +
+          "                    <a href=\"" + SERVER_HOST + "/v1/auth/set-password?authToken=" + authToken + "\"\n" +
                 "                       style=\"display: inline-block; padding: 14px 28px; background-color: #333366; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 5px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\">\n" +
                 "                        Verify Your Email\n" +
                 "                    </a>\n" +
                 "                </p>\n" +
                 "                <p style=\"margin: 0 0 16px;\">If the button above does not work, copy and paste the following link into your browser:</p>\n" +
                 "                <p style=\"word-wrap: break-word; color: #2a9d8f; margin: 0 0 16px;\">\n" +
-                "                    <a href=\"http://localhost:9999/v1/auth/set-password?authToken=" + authToken + "\" style=\"color: #2a9d8f; text-decoration: none; font-size: 14px;\">\n" +
-                "                        http://localhost:9999/v1/auth/set-password?authToken=" + authToken + "\n" +
+                "                    <a href=\"" + SERVER_HOST + "/v1/auth/set-password?authToken=" + authToken + "\" style=\"color: #2a9d8f; text-decoration: none; font-size: 14px;\">\n" +
+                "                        " + SERVER_HOST + "/v1/auth/set-password?authToken=" + authToken + "\n" +
                 "                    </a>\n" +
                 "                </p>\n" +
                 "                <p style=\"margin: 0;\">Once verified, you'll be able to set your password and start exploring our platform.</p>\n" +

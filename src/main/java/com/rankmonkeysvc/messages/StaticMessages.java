@@ -1,6 +1,7 @@
 package com.rankmonkeysvc.messages;
 
 public class StaticMessages {
+    public static final String SERVER_HOST = "https://rankmonkey.onrender.com";
     public static final String AUTHORIZATION = "Authorization";
     public static final String ROLE = "role";
     public static final String EMAIL = "email";

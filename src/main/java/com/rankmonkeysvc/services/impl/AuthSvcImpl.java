@@ -174,9 +174,6 @@ public class AuthSvcImpl implements AuthSvc {
     }
 
     private void sendEmailAsync(String email, User user) {
-        if (email.length() > 0) {
-            return;
-        }
         eventLogHelper.createEventLog(
                 EventType.SET_PASSWORD_REQUEST_VIA_EMAIL,
                 user.getId().toString(), new HashMap<>(), null);

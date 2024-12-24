@@ -1,7 +1,6 @@
 package com.rankmonkeysvc.controllers;
 
 import com.rankmonkeysvc.auth.JwtSvc;
-import com.rankmonkeysvc.dto.auth.AuthenticationResponse;
 import com.rankmonkeysvc.dto.auth.PasswordChangeRequest;
 import com.rankmonkeysvc.dto.common.MessageResponse;
 import com.rankmonkeysvc.services.ProfileSvc;
