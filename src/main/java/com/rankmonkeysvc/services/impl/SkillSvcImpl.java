@@ -14,13 +14,10 @@ import com.rankmonkeysvc.services.SkillSvc;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
-
 import static com.rankmonkeysvc.messages.ErrorLogs.*;
 import static com.rankmonkeysvc.messages.ErrorMessages.*;
-import static com.rankmonkeysvc.messages.SuccessMessages.JOB_ROLE_CREATED_SUCCESSFULLY;
 import static com.rankmonkeysvc.messages.SuccessMessages.SKILL_CREATED_SUCCESSFULLY;
 
 @Slf4j
