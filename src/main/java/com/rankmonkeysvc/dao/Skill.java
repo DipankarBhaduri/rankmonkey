@@ -37,4 +37,5 @@ public class Skill {
     @Column(name = "created_at")
     @CreationTimestamp
     private LocalDateTime createdAt;
+
 }
