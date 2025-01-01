@@ -3,7 +3,6 @@ package com.rankmonkeysvc.services.impl;
 import com.rankmonkeysvc.constants.ActivationStatus;
 import com.rankmonkeysvc.constants.Role;
 import com.rankmonkeysvc.constants.UserStatus;
-import com.rankmonkeysvc.dao.JobRole;
 import com.rankmonkeysvc.dao.Skill;
 import com.rankmonkeysvc.dto.common.MessageResponse;
 import com.rankmonkeysvc.dto.skill.SkillCreationRequest;
