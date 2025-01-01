@@ -1,0 +1,33 @@
+#apiVersion: apps/v1
+#kind: Deployment
+#metadata:
+#  name: authsvc-deployment
+#  labels:
+#    app: authsvc
+#spec:
+#  replicas: 3
+#  selector:
+#    matchLabels:
+#      app: authsvc
+#  template:
+#    metadata:
+#      labels:
+#        app: authsvc
+#    spec:
+#      containers:
+#        - name: authsvc
+#          image: authsvc:latest # Ensure the image name matches what you built
+#          ports:
+#            - containerPort: 9990
+#          livenessProbe:
+#            httpGet:
+#              path: /actuator/health
+#              port: 9990
+#            initialDelaySeconds: 30
+#            periodSeconds: 10
+#          readinessProbe:
+#            httpGet:
+#              path: /actuator/health
+#              port: 9990
+#            initialDelaySeconds: 30
+#            periodSeconds: 10

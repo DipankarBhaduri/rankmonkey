@@ -1,0 +1,9 @@
+CREATE TABLE job_role (
+    id SERIAL PRIMARY KEY,
+    role_name VARCHAR(255),
+    status VARCHAR(15),
+    created_by VARCHAR(50),
+    updated_by VARCHAR(50),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
