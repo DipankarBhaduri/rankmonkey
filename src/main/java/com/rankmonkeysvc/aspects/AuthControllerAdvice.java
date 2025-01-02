@@ -159,6 +159,7 @@ public class AuthControllerAdvice {
 				.setStatusCode(HttpStatus.BAD_REQUEST.value());
 	}
 
+
 	@ExceptionHandler(
 			{
 					InvalidPasswordException.class
